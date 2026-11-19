@@ -10,7 +10,9 @@
 
 ## 直接看原型
 
-打开 [`prototype/index.html`](prototype/index.html) 即可（单文件，无依赖、无构建）。
+**在线版（GitHub Pages）**：<https://xingjiang7777.github.io/campus-classroom/> — 手机浏览器也能打开。
+
+本地版：打开 [`prototype/index.html`](prototype/index.html) 即可（单文件，无依赖、无构建）。
 
 可交互的点：
 
