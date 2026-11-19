@@ -1,0 +1,9 @@
+# 编辑器
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# 原型导出的截图 / 临时文件
+screenshots/*.tmp
+*.pdf
