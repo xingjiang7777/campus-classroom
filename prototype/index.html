@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>空教室查询 · 可点击原型</title>
+<style>
+  :root{
+    --bg:#f4f5f7;
+    --card:#ffffff;
+    --text:#1b1f24;
+    --muted:#6b7280;
+    --line:#e5e7eb;
+    --brand:#2563eb;
+    --brand-soft:#e8efff;
+    --ok:#0f9d58;
+    --ok-soft:#e6f6ec;
+    --warn:#b45309;
+    --warn-soft:#fdf3e2;
+    --bad:#b91c1c;
+    --bad-soft:#fdeaea;
+    --radius:14px;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    background:#dfe3e8;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    color:var(--text);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px 16px;
+  }
+
+  /* 手机外壳，仅用于演示 */
+  .phone{
+    width:375px;
+    height:760px;
+    max-height:calc(100vh - 48px);
+    background:var(--bg);
+    border-radius:28px;
+    box-shadow:0 24px 60px rgba(15,23,42,.28);
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+    position:relative;
+  }
+
+  /* 顶部 */
+  header{
+    background:var(--card);
+    padding:16px 16px 10px;
+    border-bottom:1px solid var(--line);
+  }
+  .title-row{display:flex;align-items:baseline;justify-content:space-between}
+  h1{font-size:19px;margin:0;letter-spacing:.2px}
+  .fresh{font-size:12px;color:var(--muted)}
+  .stale{color:var(--warn)}
+
+  .chips{display:flex;gap:8px;margin-top:12px;overflow-x:auto;padding-bottom:2px}
+  .chip{
+    flex:0 0 auto;
+    border:1px solid var(--line);
+    background:#fff;
+    color:var(--text);
+    font-size:13px;
+    padding:6px 13px;
+    border-radius:999px;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .chip[aria-pressed="true"]{
+    background:var(--brand);
+    border-color:var(--brand);
+    color:#fff;
+    font-weight:600;
+  }
+
+  /* 筛选区 */
+  .filters{
+    background:var(--card);
+    padding:10px 16px 12px;
+    border-bottom:1px solid var(--line);
+    display:flex;
+    gap:8px;
+    align-items:center;
+    flex-wrap:wrap;
+  }
+  .filters .chip{font-size:12px;padding:5px 11px}
+  .filters .label{font-size:12px;color:var(--muted);margin-right:2px}
+
+  /* 列表 */
+  main{flex:1;overflow-y:auto;padding:12px 12px 24px}
+  .room{
+    background:var(--card);
+    border-radius:var(--radius);
+    padding:14px 14px 12px;
+    margin-bottom:10px;
+    box-shadow:0 1px 2px rgba(16,24,40,.05);
+    cursor:pointer;
+    transition:transform .08s ease, box-shadow .12s ease;
+    border:1px solid transparent;
+  }
+  .room:hover{box-shadow:0 4px 12px rgba(16,24,40,.10)}
+  .room:active{transform:scale(.995)}
+  .room.busy{opacity:.62}
+  .room-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+  .room-name{font-size:16px;font-weight:700}
+  .room-sub{font-size:12px;color:var(--muted);margin-top:3px}
+  .badge{
+    font-size:12px;
+    padding:3px 9px;
+    border-radius:999px;
+    white-space:nowrap;
+    font-weight:600;
+  }
+  .badge.ok{background:var(--ok-soft);color:var(--ok)}
+  .badge.warn{background:var(--warn-soft);color:var(--warn)}
+  .badge.bad{background:var(--bad-soft);color:var(--bad)}
+  .meta{display:flex;gap:14px;margin-top:10px;font-size:12px;color:var(--muted);flex-wrap:wrap}
+  .meta span{display:inline-flex;align-items:center;gap:4px}
+
+  .empty{
+    text-align:center;
+    padding:56px 20px;
+    color:var(--muted);
+  }
+  .empty strong{display:block;color:var(--text);font-size:15px;margin-bottom:6px}
+  .empty button{
+    margin-top:16px;
+    border:none;
+    background:var(--brand);
+    color:#fff;
+    padding:9px 18px;
+    border-radius:10px;
+    font-size:14px;
+    cursor:pointer;
+  }
+
+  /* 底部弹层 */
+  .sheet-mask{
+    position:absolute;
+    inset:0;
+    background:rgba(15,23,42,.42);
+    display:none;
+    align-items:flex-end;
+  }
+  .sheet-mask.open{display:flex}
+  .sheet{
+    width:100%;
+    background:var(--card);
+    border-radius:20px 20px 0 0;
+    padding:14px 18px 22px;
+    max-height:78%;
+    overflow-y:auto;
+    animation:up .18s ease-out;
+  }
+  @keyframes up{from{transform:translateY(24px);opacity:.7}to{transform:none;opacity:1}}
+  .sheet-head{display:flex;justify-content:space-between;align-items:center}
+  .sheet-close{
+    border:none;background:#f1f3f5;width:30px;height:30px;border-radius:50%;
+    font-size:16px;line-height:1;cursor:pointer;color:var(--muted);
+  }
+  .sheet h2{font-size:17px;margin:0}
+  .kv{display:grid;grid-template-columns:88px 1fr;gap:9px 10px;margin-top:14px;font-size:13px}
+  .kv dt{color:var(--muted)}
+  .kv dd{margin:0}
+  .section-title{font-size:13px;color:var(--muted);margin:18px 0 8px}
+  .slot{
+    display:flex;justify-content:space-between;
+    font-size:13px;padding:8px 10px;background:#f8f9fb;border-radius:9px;margin-bottom:6px;
+  }
+  .slot.now{background:var(--brand-soft);color:var(--brand);font-weight:600}
+  .actions{display:flex;gap:10px;margin-top:18px}
+  .btn{
+    flex:1;border:none;border-radius:11px;padding:11px;font-size:14px;cursor:pointer;
+  }
+  .btn.primary{background:var(--brand);color:#fff;font-weight:600}
+  .btn.ghost{background:#f1f3f5;color:var(--text)}
+
+  footer{
+    font-size:11px;color:var(--muted);text-align:center;padding:8px 12px 0;
+  }
+  .demo-note{
+    width:375px;position:fixed;left:50%;bottom:6px;transform:translateX(-50%);
+    font-size:11px;color:#64748b;text-align:center;
+  }
+  @media (max-height:820px){ .demo-note{display:none} }
+</style>
+</head>
+<body>
+
+<div class="phone" role="application" aria-label="空教室查询原型">
+  <header>
+    <div class="title-row">
+      <h1>空教室</h1>
+      <div class="fresh" id="fresh">更新于 21:05</div>
+    </div>
+
+    <div class="chips" role="group" aria-label="选择时段">
+      <button class="chip" data-time="now" aria-pressed="true">现在</button>
+      <button class="chip" data-time="tonight" aria-pressed="false">今晚 19:00</button>
+      <button class="chip" data-time="morning" aria-pressed="false">明早 08:00</button>
+      <button class="chip" data-time="custom" aria-pressed="false">自定义</button>
+    </div>
+  </header>
+
+  <div class="filters">
+    <span class="label">筛选</span>
+    <button class="chip" data-filter="socket" aria-pressed="false">有插座</button>
+    <button class="chip" data-filter="cap20" aria-pressed="false">20 人以上</button>
+    <button class="chip" data-filter="building" aria-pressed="false" id="buildingBtn">只看 A 楼</button>
+  </div>
+
+  <main id="list" aria-live="polite"></main>
+
+  <footer>原型演示 · 数据为模拟，非真实课表</footer>
+
+  <!-- 详情弹层 -->
+  <div class="sheet-mask" id="mask" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <div class="sheet" id="sheet"></div>
+  </div>
+</div>
+
+<div class="demo-note">可点击：时段 / 筛选 / 教室卡片 · Esc 关闭弹层</div>
+
+<script>
+/* ---------------------------------------------------------------
+   模拟数据。真实产品中这里来自教务课表聚合，见 docs/prd.md F1。
+   每个时段三个状态：free（空闲）/ soon（即将上课）/ busy（使用中）
+   --------------------------------------------------------------- */
+const DATA = [
+  {
+    id:"A305", building:"A 楼", floor:3, room:"A305", cap:60, socket:"靠墙", ac:true,
+    times:{
+      now:    {state:"free", until:"21:40", next:"21:40 有课"},
+      tonight:{state:"free", until:"22:00", next:"无后续课程"},
+      morning:{state:"busy", until:"", next:"08:00 有课"}
+    }
+  },
+  {
+    id:"A201", building:"A 楼", floor:2, room:"A201", cap:120, socket:"无", ac:true,
+    times:{
+      now:    {state:"soon", until:"21:10", next:"21:10 有课"},
+      tonight:{state:"free", until:"22:00", next:"无后续课程"},
+      morning:{state:"free", until:"09:50", next:"09:50 有课"}
+    }
+  },
+  {
+    id:"B102", building:"B 楼", floor:1, room:"B102", cap:40, socket:"每人一位", ac:false,
+    times:{
+      now:    {state:"free", until:"22:00", next:"无后续课程"},
+      tonight:{state:"busy", until:"", next:"19:00 有课"},
+      morning:{state:"free", until:"12:00", next:"无后续课程"}
+    }
+  },
+  {
+    id:"B305", building:"B 楼", floor:3, room:"B305", cap:24, socket:"靠墙", ac:false,
+    times:{
+      now:    {state:"free", until:"21:40", next:"21:40 有课"},
+      tonight:{state:"free", until:"22:00", next:"无后续课程"},
+      morning:{state:"busy", until:"", next:"08:00 有课"}
+    }
+  },
+  {
+    id:"C410", building:"C 楼", floor:4, room:"C410", cap:180, socket:"无", ac:true,
+    times:{
+      now:    {state:"busy", until:"", next:"正在上课"},
+      tonight:{state:"free", until:"21:40", next:"21:40 有课"},
+      morning:{state:"free", until:"11:50", next:"11:50 有课"}
+    }
+  },
+  {
+    id:"C208", building:"C 楼", floor:2, room:"C208", cap:16, socket:"每人一位", ac:true,
+    times:{
+      now:    {state:"free", until:"22:00", next:"无后续课程"},
+      tonight:{state:"free", until:"22:00", next:"无后续课程"},
+      morning:{state:"free", until:"08:50", next:"08:50 有课"}
+    }
+  }
+];
+
+const STATE = {
+  time: "now",
+  filters: { socket:false, cap20:false, building:false }
+};
+
+const TIME_LABEL = { now:"现在", tonight:"今晚 19:00", morning:"明早 08:00", custom:"自定义" };
+
+/* ---------- 渲染列表 ---------- */
+function currentRooms(){
+  const f = STATE.filters;
+  let rooms = DATA.filter(r => {
+    if (f.socket && r.socket === "无") return false;
+    if (f.cap20 && r.cap < 20) return false;
+    if (f.building && r.building !== "A 楼") return false;
+    return true;
+  });
+
+  // 排序：空闲优先 → 可空更久优先（字符串时间近似比较）→ 大教室优先
+  const rank = s => s.state === "free" ? 0 : (s.state === "soon" ? 1 : 2);
+  rooms = rooms.slice().sort((a,b) => {
+    const sa = a.times[STATE.time] || a.times.now;
+    const sb = b.times[STATE.time] || b.times.now;
+    if (rank(sa) !== rank(sb)) return rank(sa) - rank(sb);
+    if ((sa.until||"") !== (sb.until||"")) return (sb.until||"").localeCompare(sa.until||"");
+    return b.cap - a.cap;
+  });
+  return rooms;
+}
+
+function statusOf(s){
+  if (s.state === "free")  return {cls:"ok",   text:"空闲"};
+  if (s.state === "soon")  return {cls:"warn", text:"即将上课"};
+  return {cls:"bad", text:"使用中"};
+}
+
+function render(){
+  const list = document.getElementById("list");
+  const rooms = currentRooms();
+
+  if (rooms.length === 0){
+    list.innerHTML = `
+      <div class="empty">
+        <strong>没有符合条件的教室</strong>
+        试试放宽筛选条件，或切换到其他时段
+        <button onclick="resetFilters()">清除筛选</button>
+      </div>`;
+    return;
+  }
+
+  // 全部都有课 → 给一个明确的下一步，而不是空白
+  const allBusy = rooms.every(r => (r.times[STATE.time] || r.times.now).state === "busy");
+  if (allBusy && STATE.time === "tonight"){
+    list.innerHTML = `
+      <div class="empty">
+        <strong>这个时段教学楼都满了</strong>
+        考试周常见。试试看 21:00 之后，或换个楼栋
+        <button onclick="switchTime('now')">看现在有没有空的</button>
+      </div>`;
+    return;
+  }
+
+  list.innerHTML = rooms.map(r => {
+    const s = r.times[STATE.time] || r.times.now;
+    const st = statusOf(s);
+    const until = s.state === "free" ? `可用至 ${s.until}` : s.next;
+    return `
+      <article class="room ${s.state !== "free" ? "busy" : ""}" data-id="${r.id}" tabindex="0" role="button"
+               aria-label="${r.room}，${st.text}，${until}">
+        <div class="room-top">
+          <div>
+            <div class="room-name">${r.room}</div>
+            <div class="room-sub">${r.building} · ${r.floor} 层 · 可容纳 ${r.cap} 人</div>
+          </div>
+          <span class="badge ${st.cls}">${st.text}</span>
+        </div>
+        <div class="meta">
+          <span>🕘 ${until}</span>
+          <span>🔌 插座：${r.socket}</span>
+          <span>${r.ac ? "❄️ 空调" : "🚫 无空调"}</span>
+        </div>
+      </article>`;
+  }).join("");
+
+  list.querySelectorAll(".room").forEach(el => {
+    el.addEventListener("click", () => openSheet(el.dataset.id));
+    el.addEventListener("keydown", e => {
+      if (e.key === "Enter" || e.key === " "){ e.preventDefault(); openSheet(el.dataset.id); }
+    });
+  });
+}
+
+/* ---------- 详情弹层 ---------- */
+function openSheet(id){
+  const r = DATA.find(x => x.id === id);
+  if (!r) return;
+  const s = r.times[STATE.time] || r.times.now;
+  const st = statusOf(s);
+
+  const laterSlots = [
+    { t:"19:00–21:40", text: r.times.tonight.state === "free" ? "空闲" : "有课" },
+    { t:"明日 08:00–09:50", text: r.times.morning.state === "free" ? "空闲" : "有课" }
+  ];
+
+  document.getElementById("sheet").innerHTML = `
+    <div class="sheet-head">
+      <h2 id="sheetTitle">${r.room}</h2>
+      <button class="sheet-close" onclick="closeSheet()" aria-label="关闭">✕</button>
+    </div>
+    <div class="meta" style="margin-top:6px">
+      <span class="badge ${st.cls}">${st.text}</span>
+      <span style="font-size:12px;color:#6b7280">${TIME_LABEL[STATE.time]} · ${r.building}</span>
+    </div>
+
+    <dl class="kv">
+      <dt>当前时段</dt><dd>${s.state === "free" ? "可自习至 " + s.until : s.next}</dd>
+      <dt>容量</dt><dd>${r.cap} 人</dd>
+      <dt>插座</dt><dd>${r.socket}</dd>
+      <dt>空调</dt><dd>${r.ac ? "有" : "无"}</dd>
+      <dt>位置</dt><dd>${r.building} ${r.floor} 层</dd>
+    </dl>
+
+    <div class="section-title">今日后续占用</div>
+    ${laterSlots.map(x => `<div class="slot"><span>${x.t}</span><span>${x.text}</span></div>`).join("")}
+
+    <div class="actions">
+      <button class="btn ghost" onclick="fakeShare()">分享给同学</button>
+      <button class="btn primary" onclick="closeSheet()">就去这间</button>
+    </div>
+
+    <p style="font-size:11px;color:#9ca3af;margin:14px 0 0">
+      数据更新于 21:05 · 信息有误？长按卡片反馈
+    </p>`;
+
+  document.getElementById("mask").classList.add("open");
+}
+
+function closeSheet(){ document.getElementById("mask").classList.remove("open"); }
+
+function fakeShare(){
+  const s = document.getElementById("sheet").querySelector("h2").textContent;
+  alert("原型演示：真实版本会生成一张可分享的图片卡片\\n\\n" + s + " · " + TIME_LABEL[STATE.time]);
+}
+
+function switchTime(t){
+  STATE.time = t;
+  document.querySelectorAll("[data-time]").forEach(b => {
+    b.setAttribute("aria-pressed", String(b.dataset.time === t));
+  });
+  if (t === "custom"){
+    alert("原型未实现自定义时间选择，直接按\\"现在\\"展示");
+    STATE.time = "now";
+    document.querySelectorAll("[data-time]").forEach(b => {
+      b.setAttribute("aria-pressed", String(b.dataset.time === "now"));
+    });
+  }
+  render();
+}
+
+function resetFilters(){
+  STATE.filters = { socket:false, cap20:false, building:false };
+  document.querySelectorAll("[data-filter]").forEach(b => b.setAttribute("aria-pressed","false"));
+  render();
+}
+
+/* ---------- 事件绑定 ---------- */
+document.querySelectorAll("[data-time]").forEach(btn => {
+  btn.addEventListener("click", () => switchTime(btn.dataset.time));
+});
+
+document.querySelectorAll("[data-filter]").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const k = btn.dataset.filter;
+    STATE.filters[k] = !STATE.filters[k];
+    btn.setAttribute("aria-pressed", String(STATE.filters[k]));
+    render();
+  });
+});
+
+document.getElementById("mask").addEventListener("click", e => {
+  if (e.target.id === "mask") closeSheet();
+});
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeSheet(); });
+
+render();
+</script>
+</body>
+</html>
